@@ -117,42 +117,46 @@ with st.sidebar:
         if topic:
             docs = wiki_search(topic)
 
-llm = ChatOpenAI(
-    openai_api_key=api_key.value,
-    temperature=0.1,
-    model="gpt-3.5-turbo-1106",
-    streaming=True,
-    callbacks=[StreamingStdOutCallbackHandler()],
-)
-tools = [CreateQuiz]
-functions = [convert_to_openai_tool(t) for t in tools]
-llm_with_functions = llm.bind_functions(tools)
+if api_key.value:
+    try:
+        llm = ChatOpenAI(
+            openai_api_key=api_key.value,
+            temperature=0.1,
+            model="gpt-3.5-turbo-1106",
+            streaming=True,
+            callbacks=[StreamingStdOutCallbackHandler()],
+        )
+        tools = [CreateQuiz]
+        functions = [convert_to_openai_tool(t) for t in tools]
+        llm_with_functions = llm.bind_functions(tools)
 
-if st.button("Generate Quiz"):
-    quiz_source.state = run_quiz_chain(docs, topic if topic else file.name)
+        if st.button("Generate Quiz"):
+            quiz_source.state = run_quiz_chain(docs, topic if topic else file.name)
 
-if quiz_source.value:
-    result_json = quiz_source.value.additional_kwargs["function_call"]["arguments"]
-    result_dict = json.loads(result_json)
-    # print(type(result_dict))
-    grades = []
-    with st.form("questions_form"):
-        for idx, question in enumerate(result_dict["questions"]):
-            st.write(question["question"])
-            value = st.radio(
-                "Select an option.",
-                [answer["answer"] for answer in question["answers"]],
-                index=None,
-                key=f'answer_{idx}'
-            )
-            if {"answer": value, "correct": True} in question["answers"]:
-                st.success("Correct!")
-                grades.append(1)
-            elif value is not None:
-                grades.append(0)
-                st.error("Wrong!")
-        button = st.form_submit_button()
-        grade.state = sum(grades)
+        if quiz_source.value:
+            result_json = quiz_source.value.additional_kwargs["function_call"]["arguments"]
+            result_dict = json.loads(result_json)
+            # print(type(result_dict))
+            grades = []
+            with st.form("questions_form"):
+                for idx, question in enumerate(result_dict["questions"]):
+                    st.write(question["question"])
+                    value = st.radio(
+                        "Select an option.",
+                        [answer["answer"] for answer in question["answers"]],
+                        index=None,
+                        key=f'answer_{idx}'
+                    )
+                    if {"answer": value, "correct": True} in question["answers"]:
+                        st.success("Correct!")
+                        grades.append(1)
+                    elif value is not None:
+                        grades.append(0)
+                        st.error("Wrong!")
+                button = st.form_submit_button()
+                grade.state = sum(grades)
 
-if grade.value == 10:
-    st.balloons()
+        if grade.value == 10:
+            st.balloons()
+    except:
+        st.write('OPENAI API KEY 를 입력하세요')
