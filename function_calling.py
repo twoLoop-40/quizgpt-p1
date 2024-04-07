@@ -1,8 +1,10 @@
-import json
 from typing import List
-
+from typing import Optional, TypeVar, Generic
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils.function_calling import convert_to_openai_tool
+from dotenv import load_dotenv
+
+T = TypeVar("T")
+load_dotenv()
 
 
 class Answer(BaseModel):
@@ -31,4 +33,3 @@ class CreateQuiz(BaseModel):
     questions: Questions = Field(..., description="Questions for the quiz")
 
 
-print(json.dumps(convert_to_openai_tool(CreateQuiz), indent=2))
